@@ -44,7 +44,9 @@ module Administrate
 
     def query_table_name(attr)
       if association_search?(attr)
-        ActiveRecord::Base.connection.quote_table_name(attr.to_s.pluralize)
+        tn = attribute_types[attr].options.fetch(:table_name, attr.to_s.pluralize)
+        ActiveRecord::Base.connection.quote_table_name(tn)
+        # ActiveRecord::Base.connection.quote_table_name(attr.to_s.pluralize)
       else
         ActiveRecord::Base.connection.
           quote_table_name(@scoped_resource.table_name)
@@ -61,9 +63,14 @@ module Administrate
     end
 
     def tables_to_join
-      attribute_types.keys.select do |attribute|
-        attribute_types[attribute].searchable? && association_search?(attribute)
+      if @dashboard_class.const_defined? 'SEARCH_JOIN'
+        @dashboard_class::SEARCH_JOIN
+      else
+        attribute_types.keys.select do |attribute|
+          attribute_types[attribute].searchable? && association_search?(attribute)
+        end
       end
+
     end
 
     def association_search?(attribute)
