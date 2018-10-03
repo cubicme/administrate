@@ -10,10 +10,11 @@ as a count of how many objects are associated through the relationship.
 ## Local variables:
 
 - `field`:
-  An instance of [Administrate::Field::HasMany][1].
-  A wrapper around the has_many relationship pulled from the database.
+An instance of [Administrate::Field::HasMany][1].
+A wrapper around the has_many relationship pulled from the database.
 
 [1]: http://www.rubydoc.info/gems/administrate/Administrate/Field/HasMany
 %>
 
-<%= pluralize(field.data.size, field.attribute.to_s.humanize.downcase.singularize) %>
+<% attr_name = field.resource.model_name.name.underscore + '_id' %>
+<%= link_to pluralize(field.data.size, field.resource.class.human_attribute_name(field.attribute)), polymorphic_url([namespace, field.associated_class], {attr_name => field.resource.id}) %>
