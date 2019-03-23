@@ -43,7 +43,9 @@ module Administrate
     end
 
     def query_table_name(attr)
-      if association_search?(attr)
+      if custom_search_table(attr)
+        custom_search_table(attr)
+      elsif association_search?(attr)
         ActiveRecord::Base.connection.quote_table_name(attr.to_s.pluralize)
       else
         ActiveRecord::Base.connection.
@@ -61,8 +63,32 @@ module Administrate
     end
 
     def tables_to_join
-      attribute_types.keys.select do |attribute|
-        attribute_types[attribute].searchable? && association_search?(attribute)
+      attribute_types.keys.map do |attribute|
+        if attribute_types[attribute].searchable?
+          if association_search?(attribute)
+            attribute
+          elsif custom_search_join(attribute)
+            custom_search_join(attribute)
+          end
+        end
+      end.compact
+    end
+
+    def custom_search_table(attr)
+      return nil unless attribute_types[attr].respond_to?(:search_table)
+      attribute_types[attr].search_table
+    end
+
+    def custom_search_join(attr)
+      return nil unless field_class(attr).respond_to?(:search_join)
+      field_class(attr).search_join
+    end
+
+    def field_class(attr)
+      if attribute_types[attr].respond_to?(:deferred_class)
+        attribute_types[attr].deferred_class
+      else
+        attribute_types[attr]
       end
     end
 

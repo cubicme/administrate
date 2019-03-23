@@ -34,6 +34,10 @@ module Administrate
           deferred_class.permitted_attribute(attr, options))
       end
 
+      def search_table
+        options.fetch(:search_table)
+      end
+
       delegate :html_class, to: :deferred_class
     end
   end
