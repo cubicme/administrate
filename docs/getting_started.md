@@ -144,12 +144,12 @@ config.middleware.use ActionDispatch::Session::CookieStore, config.session_optio
 config.middleware.use ::Rack::MethodOverride
 ```
 
-You must also ensure that the all the required controller actions are available and accessible as routes since generators in API-only applications only generate some of the required actions. Here is an example:
+You must also ensure that all the required controller actions are available and accessible as routes since generators in API-only applications only generate some of the required actions. Here is an example:
 
 ```ruby
 # routes.rb
 namespace :admin do
-  resources name, only: %i(index show new create edit update destroy)
+  resources :name, only: %i(index show new create edit update destroy)
 end
 
 # names_controller.rb

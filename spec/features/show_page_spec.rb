@@ -10,7 +10,7 @@ RSpec.describe "customer show page" do
 
       visit admin_customer_path(customer)
 
-      within(".attribute-data--has-many table[aria-labelledby=orders]") do
+      within(table_for_attribute(:orders)) do
         ids_in_page1 = ids_in_table
         expect(ids_in_page1.count).to eq 2
         expect(order_ids).to include(*ids_in_page1)
@@ -18,7 +18,7 @@ RSpec.describe "customer show page" do
 
       click_on("Next ›")
 
-      within(".attribute-data--has-many table[aria-labelledby=orders]") do
+      within(table_for_attribute(:orders)) do
         ids_in_page2 = ids_in_table
         expect(ids_in_page2.count).to eq 2
         expect(order_ids).to include(*ids_in_page2)
@@ -26,6 +26,26 @@ RSpec.describe "customer show page" do
 
       ids_in_table = (ids_in_page1 + ids_in_page2).uniq
       expect(ids_in_table).to match_array(order_ids)
+    end
+
+    describe(
+      "when these are not a collection field" +
+      "and there's another paging association",
+    ) do
+      it "doesn't break" do
+        orig_collection_attributes = CustomerDashboard::COLLECTION_ATTRIBUTES
+        allow_any_instance_of(CustomerDashboard).to(
+          receive(:collection_attributes).
+          and_return(orig_collection_attributes - [:orders]),
+        )
+
+        customer = create(:customer)
+        create_list(:order, 4, customer: customer)
+        create_list(:log_entry, 1, logeable: customer)
+
+        visit admin_customer_path(customer)
+        click_on("Next ›")
+      end
     end
   end
 
@@ -73,7 +93,7 @@ RSpec.describe "customer show page" do
 
     order_ids = orders.sort_by(&:id).map(&:id).reverse
 
-    within(".attribute-data--has-many table[aria-labelledby=orders]") do
+    within(table_for_attribute(:orders)) do
       expect(order_ids.first(2)).to eq(ids_in_table)
     end
 
@@ -81,7 +101,7 @@ RSpec.describe "customer show page" do
                                 order: :id, direction: :desc, page: 2
                               })
 
-    within(".attribute-data--has-many table[aria-labelledby=orders]") do
+    within(table_for_attribute(:orders)) do
       expect(order_ids.last(2)).to eq(ids_in_table)
     end
   end
@@ -104,11 +124,11 @@ RSpec.describe "customer show page" do
     order_ids = orders.sort_by(&:id).map(&:id).reverse
     log_entry_ids = log_entries.sort_by(&:id).map(&:id)
 
-    within(".attribute-data--has-many table[aria-labelledby=orders]") do
+    within(table_for_attribute(:orders)) do
       expect(order_ids.first(2)).to eq(ids_in_table)
     end
 
-    within(".attribute-data--has-many table[aria-labelledby=log_entries]") do
+    within(table_for_attribute(:log_entries)) do
       expect(log_entry_ids.first(2)).to eq(ids_in_table)
     end
 
@@ -121,11 +141,11 @@ RSpec.describe "customer show page" do
       },
     )
 
-    within(".attribute-data--has-many table[aria-labelledby=orders]") do
+    within(table_for_attribute(:orders)) do
       expect(order_ids.last(2)).to eq(ids_in_table)
     end
 
-    within(".attribute-data--has-many table[aria-labelledby=log_entries]") do
+    within(table_for_attribute(:log_entries)) do
       expect(log_entry_ids.first(2)).to eq(ids_in_table)
     end
   end
@@ -210,5 +230,9 @@ RSpec.describe "customer show page" do
 
   def ids_in_table
     all("tr td:first-child").map(&:text).map(&:to_i)
+  end
+
+  def table_for_attribute(attr_name)
+    find("table[aria-labelledby=#{attr_name}]")
   end
 end
